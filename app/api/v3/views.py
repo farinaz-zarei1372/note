@@ -1,6 +1,6 @@
 from rest_framework import generics, viewsets, mixins
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated, IsAdminUser, BasePermission
+from rest_framework.permissions import IsAuthenticated, BasePermission
 from rest_framework.response import Response
 
 from app.api.v3.serializers import NoteSerializer, CategorySerializer
@@ -24,14 +24,12 @@ class NoteView(viewsets.GenericViewSet, mixins.CreateModelMixin, mixins.Retrieve
         SAFE_METHODS = ["GET"]
 
         def has_permission(self, request, view):
-            print(request.user.is_superuser, request.method, request.user)
             if not request.user.is_superuser:
                 return request.method in self.SAFE_METHODS
             else:
                 return True
 
     permission_classes = [IsAdminOrReadOnly, IsAuthenticated]
-
 
 
 class CategoryView(viewsets.GenericViewSet, mixins.CreateModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin,
@@ -41,15 +39,13 @@ class CategoryView(viewsets.GenericViewSet, mixins.CreateModelMixin, mixins.Retr
     ordering_fields = ['created_at']
     queryset = Category.objects.all()
 
-    # class IsOwnerOrReadOnly(BasePermission):
-    #     SAFE_METHODS = ["GET"]
-    #
-    #     def has_object_permission(self, request, view, obj):
-    #         print(obj.owner.id, request.user)
-    #         if not obj.owner.id == request.user.id:
-    #             return request.method in self.SAFE_METHODS
-    #         else:
-    #             return True
-    #
-    # permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
-    permission_classes = [IsAuthenticated]
+    class IsOwnerOrReadOnly(BasePermission):
+        SAFE_METHODS = ["GET"]
+
+        def has_object_permission(self, request, view, obj):
+            if not obj.owner.id == request.user.id:
+                return request.method in self.SAFE_METHODS
+            else:
+                return True
+
+    permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
